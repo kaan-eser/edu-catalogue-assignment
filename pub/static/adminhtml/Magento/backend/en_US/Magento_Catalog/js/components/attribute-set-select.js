@@ -1,0 +1,1 @@
+/home/scandiweb/Projects/catalogue-assignment/vendor/magento/module-catalog/view/adminhtml/web/js/components/attribute-set-select.js

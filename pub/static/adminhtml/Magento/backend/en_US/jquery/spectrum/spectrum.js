@@ -1,0 +1,1 @@
+/home/scandiweb/Projects/catalogue-assignment/lib/web/jquery/spectrum/spectrum.js

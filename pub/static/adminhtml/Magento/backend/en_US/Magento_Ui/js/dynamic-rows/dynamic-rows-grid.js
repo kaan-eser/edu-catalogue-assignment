@@ -1,0 +1,1 @@
+/home/scandiweb/Projects/catalogue-assignment/vendor/magento/module-ui/view/base/web/js/dynamic-rows/dynamic-rows-grid.js
