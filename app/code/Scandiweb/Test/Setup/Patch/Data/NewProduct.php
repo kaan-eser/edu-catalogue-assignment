@@ -21,9 +21,15 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Eav\Setup\EavSetup;
+use Magento\InventoryApi\Api\Data\SourceItemInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\InventoryApi\Api\Data\SourceItemInterfaceFactory;
 use Magento\InventoryApi\Api\SourceItemsSaveInterface;
+use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\StateException;
+use Exception;
 
 class NewProduct implements DataPatchInterface
 {
@@ -106,22 +112,22 @@ class NewProduct implements DataPatchInterface
     }
 
     /**
-     * @return NewProduct|void
-     * @throws \Exception
+     * @return void
+     * @throws Exception
      */
-    public function apply()
+    public function apply(): void
     {
         $this->appState->emulateAreaCode('adminhtml', [$this, 'execute']);
     }
 
     /**
      * @return void
-     * @throws \Magento\Framework\Exception\CouldNotSaveException
-     * @throws \Magento\Framework\Exception\InputException
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\StateException
+     * @throws CouldNotSaveException
+     * @throws InputException
+     * @throws LocalizedException
+     * @throws StateException
      */
-    public function execute()
+    public function execute(): void
     {
         $product = $this->productInterfaceFactory->create();
 
@@ -131,6 +137,7 @@ class NewProduct implements DataPatchInterface
 
         $attributeSetId = $this->eavSetup->getAttributeSetId(Product::ENTITY, 'Default');
 
+        // Create the product
         $product->setTypeId(Type::TYPE_SIMPLE)
             ->setAttributeSetId($attributeSetId)
             ->setName('Polo Torso')
@@ -142,13 +149,25 @@ class NewProduct implements DataPatchInterface
 
         $product = $this->productRepository->save($product);
 
+        // Setting the stock data
+        $product->setStockData(['use_config_manage_stock' => 1, 'is_qty_decimal' => 0, 'is_in_stock' => 1]);
+
+        // Set the quantity
+        $sourceItem = $this->sourceItemFactory->create();
+        $sourceItem->setSourceCode('default');
+        $sourceItem->setQuantity(150);
+        $sourceItem->setSku($product->getSku());
+        $sourceItem->setStatus(SourceItemInterface::STATUS_IN_STOCK);
+
+        $this->sourceItemsSaveInterface->execute([$sourceItem]);
+
         $this->categoryLink->assignProductToCategories($product->getSku(), [11]);
     }
 
     /**
      * @return array|string[]
      */
-    public static function getDependencies()
+    public static function getDependencies(): array
     {
         return [];
     }
@@ -156,7 +175,7 @@ class NewProduct implements DataPatchInterface
     /**
      * @return array|string[]
      */
-    public function getAliases()
+    public function getAliases(): array
     {
         return [];
     }
